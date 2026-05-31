@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,6 +20,10 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _fadeController;
   late final Animation<double> _fadeIn;
   late final Animation<Offset> _slideUp;
+
+  Timer? _initialDelay;
+  Timer? _pollTimer;
+  Timer? _transitionDelay;
 
   @override
   void initState() {
@@ -45,38 +51,46 @@ class _SplashScreenState extends State<SplashScreen>
     _startLoading();
   }
 
-  Future<void> _startLoading() async {
+  void _startLoading() {
     // Let the splash show for at least 1.5 seconds for the animation to play
-    await Future.delayed(const Duration(milliseconds: 800));
+    _initialDelay = Timer(const Duration(milliseconds: 800), () {
+      if (!mounted) return;
 
-    if (!mounted) return;
+      // Trigger data loading
+      final habitProv = context.read<HabitProvider>();
+      final moodProv = context.read<MoodProvider>();
 
-    // Trigger data loading
-    final habitProv = context.read<HabitProvider>();
-    final moodProv = context.read<MoodProvider>();
+      habitProv.loadHabits();
+      habitProv.loadTodayCompletions();
+      moodProv.loadMoodEntries();
 
-    habitProv.loadHabits();
-    habitProv.loadTodayCompletions();
-    moodProv.loadMoodEntries();
+      _startPolling();
+    });
+  }
 
-    // Wait for both providers to finish loading (or error out)
-    // Poll every 100ms to check if loading is complete
-    while (mounted) {
-      await Future.delayed(const Duration(milliseconds: 150));
-      if (!habitProv.isLoading && !moodProv.isLoading) {
-        break;
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(milliseconds: 150), (_) {
+      if (!mounted) {
+        _pollTimer?.cancel();
+        return;
       }
-    }
 
-    if (!mounted) return;
+      final habitProv = context.read<HabitProvider>();
+      final moodProv = context.read<MoodProvider>();
 
-    // Brief pause so the user sees the loaded state before transitioning
-    await Future.delayed(const Duration(milliseconds: 400));
+      if (!habitProv.isLoading && !moodProv.isLoading) {
+        _pollTimer?.cancel();
+        _scheduleTransition();
+      }
+    });
+  }
 
-    if (!mounted) return;
+  void _scheduleTransition() {
+    _transitionDelay = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
 
-    _fadeController.reverse().then((_) {
-      if (mounted) {
+      _fadeController.reverse().then((_) {
+        if (!mounted) return;
         Navigator.of(context).pushReplacement(
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
@@ -88,12 +102,15 @@ class _SplashScreenState extends State<SplashScreen>
             transitionDuration: const Duration(milliseconds: 400),
           ),
         );
-      }
+      });
     });
   }
 
   @override
   void dispose() {
+    _initialDelay?.cancel();
+    _pollTimer?.cancel();
+    _transitionDelay?.cancel();
     _fadeController.dispose();
     super.dispose();
   }

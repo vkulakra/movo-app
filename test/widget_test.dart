@@ -10,13 +10,14 @@ import 'package:habit_mood_journal/main.dart';
 import 'package:habit_mood_journal/providers/theme_provider.dart';
 
 void main() {
-  setUpAll(() {
+  setUpAll(() async {
     // Initialize FFI-based SQLite for testing (native plugin not available)
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
 
     // Prevent google_fonts from making network requests during tests.
-    // When the font isn't available locally, it falls back to the system font.
+    // The Poppins fonts are declared in pubspec.yaml under fonts: so Google
+    // Fonts will discover them from the bundled assets automatically.
     GoogleFonts.config.allowRuntimeFetching = false;
 
     // Provide mock initial values for SharedPreferences so that
