@@ -128,13 +128,13 @@ We may update this Privacy Policy from time to time. When we do, we will update 
 
 If you have any questions about this Privacy Policy, please contact us at:
 
-**Email:** [vikaslakra7.vl@gmail.com]
+**Email:** vikaslakra7.vl@gmail.com
 
 ---
 
 ## 9. Governing Law
 
-This Privacy Policy shall be governed by and construed in accordance with the laws of [Your Country/State].
+This Privacy Policy shall be governed by and construed in accordance with the laws of India.
 
 ---
 
