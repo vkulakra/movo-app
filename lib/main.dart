@@ -18,7 +18,6 @@ import 'screens/statistics_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/notification_service.dart';
 import 'services/workmanager_service.dart';
-import 'services/native_alarm_manager.dart';
 import 'widgets/banner_ad_widget.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -68,18 +67,9 @@ void main() async {
     debugPrint('AdMob initialization failed (non-fatal): $e');
   }
 
-  // ── 3. Initialize notification & alarm services ──
+  // ── 3. Initialize notification services ──
   await NotificationService.instance.initialize();
   await WorkmanagerService.initialize();
-  await NativeAlarmManager.initialize();
-
-  // Handle any pending alarm action that arrived during cold start
-  final pendingAction = await NativeAlarmManager.getPendingAlarmAction();
-  if (pendingAction != null) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _handleAlarmAction(pendingAction);
-    });
-  }
 
   // ── 4. Load theme preference ──
   final themeProvider = ThemeProvider();
@@ -91,9 +81,7 @@ void main() async {
     firebaseAvailable: firebaseAvailable,
     crashConsentGiven: crashConsentGiven,
     crashConsentPrompted: crashConsentPrompted,
-  ));
-
-  // Set up notification response handler after the widget tree is built
+  ));    // Set up notification response handler after the widget tree is built
   WidgetsBinding.instance.addPostFrameCallback((_) {
     _setupNotificationHandler();
   });
@@ -121,9 +109,6 @@ void _setupNotificationHandler() {
         habitProv.addCompletion(habit.id!);
       }
 
-      // Track that the notification was shown today (prevents duplicate missed check)
-      context.read<ReminderProvider>().markReminderShown();
-
       if (uncompleted.isNotEmpty) {
         NotificationService.instance.showTaskDoneConfirmation(
           uncompleted.length,
@@ -132,48 +117,10 @@ void _setupNotificationHandler() {
     }
     // "Not Done" action — notification is auto-dismissed via cancelNotification: true
     if (response.actionId == NotificationService.actionNotDone) {
-      // Track that the notification was seen today (prevents duplicate missed check)
-      context.read<ReminderProvider>().markReminderShown();
       return;
     }
-  };
+  };}
 
-  // Handle actions from the native AlarmManager.setAlarmClock
-  NativeAlarmManager.onAlarmAction = (action) {
-    _handleAlarmAction(action);
-  };
-}
-
-/// Shared handler for native alarm actions (both warm-start via callback
-/// and cold-start via [NativeAlarmManager.getPendingAlarmAction]).
-void _handleAlarmAction(String action) {
-  final ctx = navigatorKey.currentContext;
-  if (ctx == null) return;
-
-  if (action == 'task_done') {
-    final habitProv = ctx.read<HabitProvider>();
-    final uncompleted = habitProv.habits.where((h) =>
-        h.id != null &&
-        !habitProv.todayCompletions.any((c) => c.habitId == h.id)).toList();
-
-    for (final habit in uncompleted) {
-      habitProv.addCompletion(habit.id!);
-    }
-
-    ctx.read<ReminderProvider>().markReminderShown();
-
-    if (uncompleted.isNotEmpty) {
-      NotificationService.instance.showTaskDoneConfirmation(
-        uncompleted.length,
-      );
-    }
-  } else if (action == 'not_done') {
-    ctx.read<ReminderProvider>().markReminderShown();
-  } else if (action == 'alarm_fired') {
-    // Notification body tapped — navigate to Habits tab
-    MainScreen.navigateToTab(1);
-  }
-}
 
 class MovoApp extends StatelessWidget {
   final ThemeProvider themeProvider;
@@ -258,24 +205,12 @@ class _AnimatedThemeAppState extends State<_AnimatedThemeApp>
     // Defer system brightness update to avoid calling notifyListeners() during build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateSystemBrightness();
-      // Check for missed reminder on first launch
-      _checkMissedReminder();
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _checkMissedReminder();
-    }
-  }
-
-  void _checkMissedReminder() {
-    final context = navigatorKey.currentContext;
-    if (context == null) return;
-    final reminderProv = context.read<ReminderProvider>();
-    final habitProv = context.read<HabitProvider>();
-    reminderProv.showReminderIfDue(habitProv);
+    // Notifications are handled by WorkManager periodic tasks — no missed-check needed
   }
 
   @override

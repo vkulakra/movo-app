@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/habit.dart';
 import '../providers/habit_provider.dart';
-import '../providers/reminder_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_icon_picker.dart';
 import '../widgets/habit_tile.dart';
@@ -217,12 +216,6 @@ class _HabitsScreenState extends State<HabitsScreen> {
                           } else {
                             await provider.addHabit(habit);
                           }
-                          // Reschedule reminder with updated habit data
-                          if (context.mounted) {
-                            await context
-                                .read<ReminderProvider>()
-                                .rescheduleFromHabitProvider(provider);
-                          }
                           if (context.mounted) Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(
@@ -343,13 +336,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                     child: const Icon(Icons.delete_rounded, color: Colors.white),
                   ),
                   onDismissed: (_) {
-                    provider.deleteHabit(habit.id!).then((_) async {
-                      if (context.mounted) {
-                        await context
-                            .read<ReminderProvider>()
-                            .rescheduleFromHabitProvider(provider);
-                      }
-                    });
+                    provider.deleteHabit(habit.id!);
                   },
                   child: HabitTile(
                     habit: habit,

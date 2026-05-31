@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/reminder_provider.dart';
-import '../providers/habit_provider.dart';
 import '../providers/ad_provider.dart';
 import '../providers/crash_consent_provider.dart';
 import '../services/notification_service.dart';
@@ -64,7 +63,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
 
                   // Title
                   Text(
-                    'Daily Reminder',
+                    'Notifications',
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -73,7 +72,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Get a friendly nudge to complete your habits',
+                    'Get friendly nudges throughout the day',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
@@ -92,7 +91,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                     ),
                     child: SwitchListTile(
                       title: Text(
-                        'Enable Reminders',
+                        'Enable Notifications',
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -101,7 +100,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                       ),
                       subtitle: Text(
                         provider.isEnabled
-                            ? 'Reminder set for ${provider.timeDisplay}'
+                            ? 'You\'ll get up to 4 random check-ins daily'
                             : 'Tap to turn on',
                         style: GoogleFonts.poppins(
                           fontSize: 13,
@@ -117,66 +116,68 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                   if (provider.isEnabled) ...[
                     const SizedBox(height: 16),
 
-                    // Time picker
+                    // Time windows explanation
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.05)
-                            : Colors.grey.withValues(alpha: 0.08),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        ),
                       ),
-                      child: ListTile(
-                        leading: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.schedule_rounded,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        title: Text(
-                          'Reminder Time',
-                          style: GoogleFonts.poppins(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
-                          ),
-                        ),
-                        trailing: Text(
-                          provider.timeDisplay,
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
-                        onTap: () async {
-                          final time = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay(
-                              hour: provider.hour,
-                              minute: provider.minute,
-                            ),
-                            builder: (context, child) {
-                              return Theme(
-                                data: theme.copyWith(
-                                  colorScheme: theme.colorScheme.copyWith(
-                                    primary: AppTheme.primaryColor,
-                                  ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.schedule_rounded,
+                                size: 20,
+                                color: AppTheme.primaryColor,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Daily Check-In Times',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppTheme.darkTextPrimary
+                                      : AppTheme.textPrimary,
                                 ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (time != null && mounted) {
-                            await provider.setTime(time.hour, time.minute);
-                          }
-                        },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          _WindowRow(
+                            icon: Icons.wb_sunny_rounded,
+                            label: 'Morning',
+                            time: '6:00 – 10:59',
+                            isDark: isDark,
+                          ),
+                          const SizedBox(height: 8),
+                          _WindowRow(
+                            icon: Icons.wb_cloudy_rounded,
+                            label: 'Afternoon',
+                            time: '11:00 – 14:59',
+                            isDark: isDark,
+                          ),
+                          const SizedBox(height: 8),
+                          _WindowRow(
+                            icon: Icons.nights_stay_rounded,
+                            label: 'Evening',
+                            time: '15:00 – 18:59',
+                            isDark: isDark,
+                          ),
+                          const SizedBox(height: 8),
+                          _WindowRow(
+                            icon: Icons.bedtime_rounded,
+                            label: 'Night',
+                            time: '19:00 – 21:59',
+                            isDark: isDark,
+                          ),
+                        ],
                       ),
                     ),
 
@@ -225,7 +226,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                       ),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
 
                     // Info text
                     Container(
@@ -244,7 +245,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'You\'ll get a notification with "Task Done" and "Not Done" buttons to quickly update your progress.',
+                              'Notifications arrive at random times within each window. Tap "Task Done" or "Not Done" to update your progress instantly.',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: AppTheme.primaryColor.withValues(alpha: 0.8),
@@ -258,92 +259,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
 
                     const SizedBox(height: 16),
 
-                    // Battery optimization tip — important for Realme/OPPO/Xiaomi
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Colors.orange.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.battery_alert_rounded,
-                            size: 20,
-                            color: Colors.orange.shade400,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Scheduled reminders not arriving?',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.orange.shade700,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'On some phones (Realme, OPPO, Xiaomi), battery optimization blocks scheduled alarms. Please open Battery Settings and select "No restrictions" / "Allow background activity" for Movo.',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 11,
-                                    color: Colors.orange.shade600,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => provider.openBatterySettings(),
-                                        icon: const Icon(Icons.battery_charging_full_rounded, size: 16),
-                                        label: const Text('⚙ Battery', style: TextStyle(fontSize: 12)),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.orange.shade600,
-                                          side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => provider.openAppSettings(),
-                                        icon: const Icon(Icons.settings_rounded, size: 16),
-                                        label: const Text('⚙ App Info', style: TextStyle(fontSize: 12)),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.orange.shade600,
-                                          side: BorderSide(color: Colors.orange.withValues(alpha: 0.3)),
-                                          padding: const EdgeInsets.symmetric(vertical: 8),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Immediate test notification button
+                    // Test notification button
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -363,7 +279,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                           }
                         },
                         icon: const Icon(Icons.bug_report_rounded, size: 20),
-                        label: const Text('Send Instant Test'),
+                        label: const Text('Send Test Notification'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.primaryColor,
                           side: BorderSide(
@@ -376,151 +292,6 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    // Scheduled test notification button — verifies exact alarm timing
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          await NotificationService.instance.sendTestScheduledReminder();
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Scheduled test sent! It will arrive in ~1 minute to verify exact alarm timing.'),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                duration: const Duration(seconds: 5),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.timer_rounded, size: 20),
-                        label: const Text('Test Exact Scheduling (1 min)'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.primaryColor.withValues(alpha: 0.8),
-                          side: BorderSide(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // Check for missed reminder button — safety net for when scheduled alarms fail
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          // Access HabitProvider from the widget tree
-                          final habitProv = context.read<HabitProvider>();
-                          final shown = await provider.showReminderIfDue(habitProv);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  shown
-                                      ? 'Reminder shown! Check your notification shade.'
-                                      : (provider.hasScheduledTimePassed
-                                          ? 'Reminder was already shown today.'
-                                          : 'Scheduled time (${provider.timeDisplay}) has not passed yet.'),
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                duration: const Duration(seconds: 4),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.notifications_active_rounded, size: 20),
-                        label: const Text('Show Reminder Now (Missed Check)'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.green.shade600,
-                          side: BorderSide(
-                            color: Colors.green.withValues(alpha: 0.3),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Diagnostics section
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withValues(alpha: 0.04)
-                            : Colors.grey.withValues(alpha: 0.06),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.bug_report_outlined,
-                                  size: 16,
-                                  color: isDark
-                                      ? AppTheme.darkTextSecondary
-                                      : AppTheme.textSecondary),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Scheduling Diagnostics',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark
-                                      ? AppTheme.darkTextSecondary
-                                      : AppTheme.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          _DiagnosticRow(
-                            label: 'Schedule mode',
-                            value: 'inexactAllowWhileIdle',
-                            isDark: isDark,
-                          ),
-                          _DiagnosticRow(
-                            label: 'Reminder time',
-                            value: provider.timeDisplay,
-                            isDark: isDark,
-                          ),
-                          _DiagnosticRow(
-                            label: 'Time passed',
-                            value: provider.hasScheduledTimePassed ? 'Yes' : 'No',
-                            isDark: isDark,
-                          ),
-                          FutureBuilder<bool>(
-                            future: provider.wasReminderShownToday(),
-                            builder: (context, snapshot) {
-                              return _DiagnosticRow(
-                                label: 'Shown today',
-                                value: snapshot.data == true ? 'Yes' : 'No',
-                                isDark: isDark,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-
                   ],
 
                   // ── Remove Ads Section ──
@@ -552,6 +323,48 @@ class _ReminderSettingsState extends State<ReminderSettings> {
           ),
         );
       },
+    );
+  }
+}
+
+/// A single row showing a time window's icon, label, and time range.
+class _WindowRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String time;
+  final bool isDark;
+
+  const _WindowRow({
+    required this.icon,
+    required this.label,
+    required this.time,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.primaryColor),
+        const SizedBox(width: 10),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          time,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.primaryColor,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -900,7 +713,7 @@ class _CrashConsentCard extends StatelessWidget {
                     crashProvider.denyConsent();
                   }
                 },
-                activeColor: AppTheme.primaryColor,
+                activeThumbColor: AppTheme.primaryColor,
               ),
             ],
           ),
@@ -913,47 +726,6 @@ class _CrashConsentCard extends StatelessWidget {
                   ? AppTheme.darkTextSecondary
                   : AppTheme.textSecondary,
               fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A small row widget for showing diagnostic key-value pairs.
-class _DiagnosticRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isDark;
-
-  const _DiagnosticRow({
-    required this.label,
-    required this.value,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Text(
-            '$label: ',
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'monospace',
-              color: isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary,
             ),
           ),
         ],

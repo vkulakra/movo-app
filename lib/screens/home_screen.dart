@@ -36,9 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
       await habitProv.loadTodayCompletions();
       moodProv.loadMoodEntries();
 
-      // Reschedule the daily reminder with actual habit data
-      await remindProv.rescheduleFromHabitProvider(habitProv);
-
       // Show crash reporting consent dialog on first launch
       if (context.mounted) {
         CrashConsentDialog.showIfNeeded(context);
@@ -99,8 +96,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             onPressed: () => ReminderSettings.show(context),
                             tooltip: remindProv.isEnabled
-                                ? 'Reminder at ${remindProv.timeDisplay} — tap to change'
-                                : 'Set a daily reminder',
+                                ? 'Notifications enabled — tap to change'
+                                : 'Enable notifications',
                           );
                         },
                       ),
@@ -278,19 +275,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         isCompleted: isCompleted,
                         onTap: () {
                           if (isCompleted) {
-                            provider.removeCompletion(habit.id!).then((_) async {
-                              if (context.mounted) {
-                                await context.read<ReminderProvider>()
-                                    .rescheduleFromHabitProvider(provider);
-                              }
-                            });
+                            provider.removeCompletion(habit.id!);
                           } else {
-                            provider.addCompletion(habit.id!).then((_) async {
-                              if (context.mounted) {
-                                await context.read<ReminderProvider>()
-                                    .rescheduleFromHabitProvider(provider);
-                              }
-                            });
+                            provider.addCompletion(habit.id!);
                           }
                         },
                       );

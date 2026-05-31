@@ -132,8 +132,6 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
       if (android != null) {
         await android.requestNotificationsPermission();
-        // Also request exact alarm permission for scheduled notifications
-        await android.requestExactAlarmsPermission();
       }
     } catch (e) {
       debugPrint('Permission request error: $e');
