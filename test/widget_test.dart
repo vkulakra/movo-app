@@ -50,7 +50,12 @@ void main() {
 
   testWidgets('App loads successfully', (WidgetTester tester) async {
     final themeProvider = ThemeProvider();
-    await tester.pumpWidget(MovoApp(themeProvider: themeProvider));
+    await tester.pumpWidget(MovoApp(
+      themeProvider: themeProvider,
+      firebaseAvailable: false,
+      crashConsentGiven: false,
+      crashConsentPrompted: false,
+    ));
 
     // The app starts with a SplashScreen. Verifying the splash screen renders
     // confirms the app builds and initialises without crashing.

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/habit_provider.dart';
 import 'providers/mood_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/reminder_provider.dart';
 import 'providers/ad_provider.dart';
+import 'providers/crash_consent_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/splash_screen.dart';
 import 'screens/habits_screen.dart';
@@ -22,8 +26,36 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Google Mobile Ads SDK (privacy-friendly, no tracking).
-  // Wrapped in try-catch so missing Google Play Services doesn't crash the app.
+  // ── 1. Initialize Firebase (with Crashlytics) ──
+  bool firebaseAvailable = false;
+  bool crashConsentGiven = false;
+  bool crashConsentPrompted = false;
+
+  try {
+    await Firebase.initializeApp();
+    firebaseAvailable = true;
+
+    // Load consent preference from local storage
+    final prefs = await SharedPreferences.getInstance();
+    crashConsentGiven = prefs.getBool('crash_consent_given') ?? false;
+    crashConsentPrompted = prefs.getBool('crash_consent_prompted') ?? false;
+
+    // Apply saved consent to Crashlytics
+    await FirebaseCrashlytics.instance
+        .setCrashlyticsCollectionEnabled(crashConsentGiven);
+
+    // If consented, install global Flutter error handler
+    if (crashConsentGiven) {
+      FlutterError.onError = (errorDetails) {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+      };
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization failed (non-fatal): $e');
+    // Crashlytics will simply be unavailable — no crash reporting.
+  }
+
+  // ── 2. Initialize Google Mobile Ads SDK ──
   try {
     await MobileAds.instance.initialize();
     await MobileAds.instance.updateRequestConfiguration(
@@ -36,12 +68,12 @@ void main() async {
     debugPrint('AdMob initialization failed (non-fatal): $e');
   }
 
+  // ── 3. Initialize notification & alarm services ──
   await NotificationService.instance.initialize();
   await WorkmanagerService.initialize();
   await NativeAlarmManager.initialize();
 
   // Handle any pending alarm action that arrived during cold start
-  // (e.g. user tapped "Task Done" on a notification from setAlarmClock)
   final pendingAction = await NativeAlarmManager.getPendingAlarmAction();
   if (pendingAction != null) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -49,11 +81,17 @@ void main() async {
     });
   }
 
-  // Load theme preference before running app
+  // ── 4. Load theme preference ──
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
-  runApp(MovoApp(themeProvider: themeProvider));
+  // ── 5. Run the app ──
+  runApp(MovoApp(
+    themeProvider: themeProvider,
+    firebaseAvailable: firebaseAvailable,
+    crashConsentGiven: crashConsentGiven,
+    crashConsentPrompted: crashConsentPrompted,
+  ));
 
   // Set up notification response handler after the widget tree is built
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -139,8 +177,17 @@ void _handleAlarmAction(String action) {
 
 class MovoApp extends StatelessWidget {
   final ThemeProvider themeProvider;
+  final bool firebaseAvailable;
+  final bool crashConsentGiven;
+  final bool crashConsentPrompted;
 
-  const MovoApp({super.key, required this.themeProvider});
+  const MovoApp({
+    super.key,
+    required this.themeProvider,
+    required this.firebaseAvailable,
+    required this.crashConsentGiven,
+    required this.crashConsentPrompted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +202,11 @@ class MovoApp extends StatelessWidget {
           });
           return adProv;
         }),
+        ChangeNotifierProvider(create: (_) => CrashConsentProvider(
+          initialConsent: crashConsentGiven,
+          initialPrompted: crashConsentPrompted,
+          firebaseAvailable: firebaseAvailable,
+        )),
         ChangeNotifierProvider(create: (_) => HabitProvider()),
         ChangeNotifierProvider(create: (_) => MoodProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()

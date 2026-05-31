@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/reminder_provider.dart';
 import '../providers/habit_provider.dart';
 import '../providers/ad_provider.dart';
+import '../providers/crash_consent_provider.dart';
 import '../services/notification_service.dart';
 import '../theme/app_theme.dart';
 
@@ -534,6 +535,17 @@ class _ReminderSettingsState extends State<ReminderSettings> {
                   ),
                   const SizedBox(height: 16),
 
+                  // ── Crash Reporting Section ──
+                  Consumer<CrashConsentProvider>(
+                    builder: (context, crashProvider, _) {
+                      return _CrashConsentCard(
+                        isDark: isDark,
+                        crashProvider: crashProvider,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
                 ],
               ),
             ),
@@ -775,6 +787,126 @@ class _RemoveAdsCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'One-time purchase. No subscription. No account needed.',
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: isDark
+                  ? AppTheme.darkTextSecondary
+                  : AppTheme.textSecondary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Card widget that shows the crash reporting consent toggle.
+/// Only visible when Firebase is available and the user has been prompted.
+class _CrashConsentCard extends StatelessWidget {
+  final bool isDark;
+  final CrashConsentProvider crashProvider;
+
+  const _CrashConsentCard({
+    required this.isDark,
+    required this.crashProvider,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Only show if Firebase is available and user has been prompted
+    if (!crashProvider.canToggle) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  crashProvider.consentGiven
+                      ? Icons.shield_rounded
+                      : Icons.shield_outlined,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Crash Reports',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppTheme.darkTextPrimary
+                            : AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      crashProvider.consentGiven
+                          ? 'Anonymous crash reports are enabled. Thank you!'
+                          : 'Help us improve by sharing anonymous crash data',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Send anonymous crash reports',
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: isDark
+                      ? AppTheme.darkTextPrimary
+                      : AppTheme.textPrimary,
+                ),
+              ),
+              Switch(
+                value: crashProvider.consentGiven,
+                onChanged: (value) {
+                  if (value) {
+                    crashProvider.grantConsent();
+                  } else {
+                    crashProvider.denyConsent();
+                  }
+                },
+                activeColor: AppTheme.primaryColor,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'No personal data, habits, or journal entries are ever sent. You can change this anytime.',
             style: GoogleFonts.poppins(
               fontSize: 10,
               color: isDark

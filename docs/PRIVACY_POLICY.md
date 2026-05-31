@@ -47,11 +47,26 @@ If you choose to purchase the "Remove Ads" upgrade, the transaction is processed
 
 For information on how Google handles your payment data, please refer to the [Google Play Terms of Service](https://play.google.com/intl/en_us/about/play-terms/).
 
-### 2.3 No Other Third-Party Services
+### 2.3 Firebase Crashlytics (Crash Reporting)
 
-The App does **not** integrate any other third-party analytics, advertising, crash reporting, or data collection services. Specifically, we do not use:
+If you opt in, the App uses Firebase Crashlytics, a crash reporting service provided by Google, to help us improve the stability of the App. Crashlytics collects:
 
-- Firebase (Analytics, Crashlytics, etc.)
+- **Crash logs** — technical data about app crashes (stack traces, device state at time of crash)
+- **Device information** — device model, OS version, time of crash
+
+**Crash reporting is opt-in only.** You will be asked on first launch whether you'd like to enable crash reporting. You can change this preference at any time in the App's Settings. If you do not opt in, no crash data is collected.
+
+Crashlytics does **not** collect:
+- Personal information (name, email, etc.)
+- Habits, mood entries, or journal data
+- Any data stored locally on your device
+
+Firebase Crashlytics' use of data is governed by the [Google Privacy Policy](https://policies.google.com/privacy).
+
+### 2.4 No Other Third-Party Services
+
+The App does **not** integrate any other third-party analytics, advertising (beyond AdMob), crash reporting, or data collection services. Specifically, we do not use:
+
 - Mixpanel, Amplitude, or any analytics SDKs
 - Facebook SDK or any social media SDKs
 - Any form of push notification service (notifications are local only)

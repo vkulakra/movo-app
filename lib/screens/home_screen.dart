@@ -6,6 +6,7 @@ import '../providers/mood_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/reminder_provider.dart';
 import '../widgets/reminder_settings.dart';
+import '../widgets/crash_consent_dialog.dart';
 import 'habits_screen.dart';
 import '../theme/app_theme.dart';
 import '../widgets/habit_tile.dart';
@@ -37,6 +38,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Reschedule the daily reminder with actual habit data
       await remindProv.rescheduleFromHabitProvider(habitProv);
+
+      // Show crash reporting consent dialog on first launch
+      if (context.mounted) {
+        CrashConsentDialog.showIfNeeded(context);
+      }
     });
   }
 
