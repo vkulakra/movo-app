@@ -37,9 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
       moodProv.loadMoodEntries();
 
       // Show crash reporting consent dialog on first launch
-      if (context.mounted) {
-        CrashConsentDialog.showIfNeeded(context);
-      }
+      if (!mounted) return;
+      CrashConsentDialog.showIfNeeded(context);
     });
   }
 

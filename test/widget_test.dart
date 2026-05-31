@@ -28,7 +28,7 @@ void main() {
   setUp(() {
     // Mock path_provider MethodChannel so getApplicationDocumentsDirectory()
     // returns a valid temp path instead of hanging in the fake async zone.
-    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       (MethodCall methodCall) async {
@@ -42,7 +42,7 @@ void main() {
 
   tearDown(() {
     // Remove the mock handler after each test
-    TestDefaultBinaryMessengerBinding.instance!.defaultBinaryMessenger
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
       const MethodChannel('plugins.flutter.io/path_provider'),
       null,
