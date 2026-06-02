@@ -18,6 +18,7 @@ import 'screens/statistics_screen.dart';
 import 'theme/app_theme.dart';
 import 'services/notification_service.dart';
 import 'services/workmanager_service.dart';
+import 'services/analytics_service.dart';
 import 'widgets/banner_ad_widget.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -71,11 +72,14 @@ void main() async {
   await NotificationService.instance.initialize();
   await WorkmanagerService.initialize();
 
-  // ── 4. Load theme preference ──
+  // ── 4. Log app open event for Analytics ──
+  AnalyticsService.instance.logAppOpened();
+
+  // ── 5. Load theme preference ──
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme();
 
-  // ── 5. Run the app ──
+  // ── 6. Run the app ──
   runApp(MovoApp(
     themeProvider: themeProvider,
     firebaseAvailable: firebaseAvailable,
@@ -252,6 +256,7 @@ class _AnimatedThemeAppState extends State<_AnimatedThemeApp>
           navigatorKey: navigatorKey,
           title: 'Movo',
           debugShowCheckedModeBanner: false,
+          navigatorObservers: [AnalyticsService.instance.observer],
           theme: ThemeData.lerp(
             AppTheme.lightTheme,
             AppTheme.darkTheme,

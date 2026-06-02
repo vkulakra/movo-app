@@ -12,7 +12,7 @@
         <!-- MUST be a direct child of <application> for MobileAdsInitProvider to find it -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-7378651540822428~3118834539"/>
 
         <!-- Firebase Crashlytics: disabled by default until user gives consent -->
         <meta-data

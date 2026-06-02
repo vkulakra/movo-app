@@ -1,4 +1,4 @@
-package com.habitmood.habit_mood_journal
+package com.vkulakra.movo
 
 import android.content.Intent
 import android.net.Uri
@@ -9,8 +9,8 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     companion object {
-        private const val CHANNEL_SETTINGS = "com.habitmood.habit_mood_journal/settings"
-        private const val PKG = "com.habitmood.habit_mood_journal"
+        private const val CHANNEL_SETTINGS = "com.vkulakra.movo/settings"
+        private const val PKG = "com.vkulakra.movo"
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {

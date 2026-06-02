@@ -47,5 +47,9 @@ app.*.map.json
 # Firebase config (obtain from Firebase Console)
 android/app/google-services.json
 
+# Release keystore and signing credentials (do not commit)
+android/release-key.jks
+android/key.properties
+
 # Windows reserved device name (cannot be indexed by git)
 nul

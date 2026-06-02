@@ -5,6 +5,7 @@ import '../providers/habit_provider.dart';
 import '../providers/mood_provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/reminder_provider.dart';
+import '../providers/ad_provider.dart';
 import '../widgets/reminder_settings.dart';
 import '../widgets/crash_consent_dialog.dart';
 import 'habits_screen.dart';
@@ -12,7 +13,9 @@ import '../theme/app_theme.dart';
 import '../widgets/habit_tile.dart';
 import '../widgets/mood_selector.dart';
 import '../widgets/error_state.dart';
+import '../widgets/interstitial_ad_manager.dart';
 import '../models/mood_entry.dart';
+import '../services/analytics_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,9 +24,24 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  late final InterstitialAdManager _interstitialManager;
+
   @override
   void initState() {
     super.initState();
+
+    // Create interstitial manager — checks AdProvider to respect "ads removed"
+    _interstitialManager = InterstitialAdManager(
+      isAdsRemoved: () {
+        // Safe access: AdProvider may not be available yet during init
+        try {
+          return context.read<AdProvider>().adsRemoved;
+        } catch (_) {
+          return false;
+        }
+      },
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final habitProv = context.read<HabitProvider>();
       final remindProv = context.read<ReminderProvider>();
@@ -36,10 +54,19 @@ class _HomeScreenState extends State<HomeScreen> {
       await habitProv.loadTodayCompletions();
       moodProv.loadMoodEntries();
 
+      // Preload an interstitial ad in the background (ready for the next breakpoint)
+      _interstitialManager.preload();
+
       // Show crash reporting consent dialog on first launch
       if (!mounted) return;
       CrashConsentDialog.showIfNeeded(context);
     });
+  }
+
+  @override
+  void dispose() {
+    _interstitialManager.dispose();
+    super.dispose();
   }
 
   String _getGreeting() {
@@ -180,6 +207,12 @@ class _HomeScreenState extends State<HomeScreen> {
                               date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
                             );
                             await provider.saveMoodEntry(entry);
+                            // Analytics
+                            AnalyticsService.instance.logMoodLogged(
+                              score, entry.moodLabel,
+                            );
+                            // Natural breakpoint: interstitial after mood check-in
+                            _interstitialManager.showIfReady();
                           },
                         ),
                       ],
@@ -277,6 +310,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             provider.removeCompletion(habit.id!);
                           } else {
                             provider.addCompletion(habit.id!);
+                            // Analytics
+                            AnalyticsService.instance.logHabitCompleted(habit.name);
+                            // Natural breakpoint: interstitial after habit completion
+                            _interstitialManager.showIfReady();
                           }
                         },
                       );

@@ -9,7 +9,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin? _notifications;
 
   static const _settingsChannel = MethodChannel(
-      'com.habitmood.habit_mood_journal/settings');
+      'com.vkulakra.movo/settings');
 
   // Action IDs
   static const String actionTaskDone = 'task_done';

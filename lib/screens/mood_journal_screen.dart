@@ -5,6 +5,7 @@ import '../providers/mood_provider.dart';
 import '../theme/app_theme.dart';
 import '../models/mood_entry.dart';
 import '../widgets/error_state.dart';
+import '../widgets/native_ad_widget.dart';
 
 class MoodJournalScreen extends StatefulWidget {
   const MoodJournalScreen({super.key});
@@ -45,12 +46,19 @@ class _MoodJournalScreenState extends State<MoodJournalScreen> {
                 ? _buildEmptyState(textPrimary, textSecondary)
                 : ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: provider.moodEntries.length + 1,
+                    itemCount: provider.moodEntries.length + 1 + provider.moodEntries.length ~/ 4,
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return _buildMoodAverageCard(provider, textPrimary, textSecondary);
                       }
-                      final entry = provider.moodEntries[index - 1];
+                      // Insert a native ad every 4 entries (after the average card)
+                      final adjustedIndex = index - 1;
+                      if (adjustedIndex > 0 && (adjustedIndex + 1) % 5 == 0) {
+                        return NativeAdWidget(key: ValueKey('mood_ad_$index'));
+                      }
+                      final entryIndex = adjustedIndex - (adjustedIndex + 1) ~/ 5;
+                      if (entryIndex >= provider.moodEntries.length) return const SizedBox.shrink();
+                      final entry = provider.moodEntries[entryIndex];
                       return _buildMoodEntryCard(entry, textPrimary, textSecondary, cardColor);
                     },
                   ),

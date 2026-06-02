@@ -6,6 +6,8 @@ import '../theme/app_theme.dart';
 import '../widgets/habit_icon_picker.dart';
 import '../widgets/habit_tile.dart';
 import '../widgets/error_state.dart';
+import '../widgets/native_ad_widget.dart';
+import '../services/analytics_service.dart';
 
 class HabitsScreen extends StatefulWidget {
   const HabitsScreen({super.key});
@@ -215,6 +217,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                             await provider.updateHabit(habit);
                           } else {
                             await provider.addHabit(habit);
+                            AnalyticsService.instance.logHabitCreated(habit.name);
                           }
                           if (context.mounted) Navigator.pop(context);
                         },
@@ -319,9 +322,15 @@ class _HabitsScreenState extends State<HabitsScreen> {
             onRefresh: () => provider.loadHabits(),
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: provider.habits.length,
+              itemCount: provider.habits.length + provider.habits.length ~/ 4,
               itemBuilder: (context, index) {
-                final habit = provider.habits[index];
+                // Insert a native ad every 4 items at display indices 4, 9, 14, ...
+                if (index > 0 && (index + 1) % 5 == 0) {
+                  return NativeAdWidget(key: ValueKey('habit_ad_$index'));
+                }
+                final habitIndex = index - (index + 1) ~/ 5;
+                if (habitIndex >= provider.habits.length) return const SizedBox.shrink();
+                final habit = provider.habits[habitIndex];
                 return Dismissible(
                   key: Key('habit_${habit.id}'),
                   direction: DismissDirection.endToStart,
@@ -337,6 +346,7 @@ class _HabitsScreenState extends State<HabitsScreen> {
                   ),
                   onDismissed: (_) {
                     provider.deleteHabit(habit.id!);
+                    AnalyticsService.instance.logHabitDeleted();
                   },
                   child: HabitTile(
                     habit: habit,

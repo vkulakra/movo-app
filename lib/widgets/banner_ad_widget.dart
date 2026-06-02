@@ -17,12 +17,13 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isLoaded = false;
   bool _hasFailed = false;
+  AdSize? _adaptiveSize;
 
   /// Google-provided test ad unit IDs.
   /// Replace with your real AdMob ad unit IDs before production release.
   static String? _adUnitId() {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Android test ID
+      return 'ca-app-pub-7378651540822428/8782224751'; // Real AdMob banner ID
     } else if (Platform.isIOS) {
       return 'ca-app-pub-3940256099942544/2934735716'; // iOS test ID
     }
@@ -34,17 +35,32 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     super.initState();
     final adUnitId = _adUnitId();
     if (adUnitId != null) {
-      _loadAd(adUnitId);
+      // Wait for first frame so MediaQuery is available for adaptive sizing
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _getAdaptiveSizeAndLoad(adUnitId);
+      });
     } else {
-      // No banner ads on non-Android/iOS platforms — hide immediately
       _hasFailed = true;
     }
   }
 
-  void _loadAd(String adUnitId) {
+  Future<void> _getAdaptiveSizeAndLoad(String adUnitId) async {
+    final size = await AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(
+      MediaQuery.of(context).size.width.truncate(),
+    );
+    if (!mounted) return;
+
+    // Adaptive size is null on some platforms — fall back to standard banner
+    final bannerSize = size ?? AdSize.banner;
+    _adaptiveSize = bannerSize;
+    _loadAd(adUnitId, bannerSize);
+  }
+
+  void _loadAd(String adUnitId, AdSize size) {
     BannerAd(
       adUnitId: adUnitId,
-      size: AdSize.banner,
+      size: size,
       request: const AdRequest(
         // No personalisation — privacy-friendly
         keywords: [],
@@ -56,6 +72,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             ad.dispose();
             return;
           }
+          // Log which mediation adapter served this ad (useful for debugging)
+          final adapter = ad.responseInfo?.mediationAdapterClassName;
+          debugPrint('BannerAd loaded via: $adapter');
           setState(() {
             _bannerAd = ad as BannerAd;
             _isLoaded = true;
@@ -85,7 +104,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return const SizedBox.shrink();
     }
 
-    if (!_isLoaded || _bannerAd == null) {
+    if (!_isLoaded || _bannerAd == null || _adaptiveSize == null) {
       // Loading placeholder — reserve space to prevent layout shift
       return const SizedBox(
         height: 50,
@@ -99,12 +118,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       );
     }
 
-    // Constrain the AdWidget height to prevent infinite-size layout errors.
-    // Banner ads are 50dp tall; AdSize.banner gives the platform's banner height.
+    // Use the adaptive banner height for a polished layout
     return Container(
       color: Colors.transparent,
       alignment: Alignment.center,
-      height: AdSize.banner.height.toDouble(),
+      height: _adaptiveSize!.height.toDouble(),
       child: AdWidget(ad: _bannerAd!),
     );
   }

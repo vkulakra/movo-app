@@ -6,8 +6,24 @@ plugins {
     id("com.google.gms.google-services")
 }
 
+// Load keystore properties from android/key.properties
+val keystoreProps = mutableMapOf<String, String>()
+val keystorePropsFile = rootProject.file("key.properties")
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.readLines().forEach { line ->
+        val trimmed = line.trim()
+        if (trimmed.isNotEmpty() && !trimmed.startsWith("#")) {
+            val idx = trimmed.indexOf("=")
+            if (idx > 0) {
+                keystoreProps[trimmed.substring(0, idx).trim()] =
+                    trimmed.substring(idx + 1).trim()
+            }
+        }
+    }
+}
+
 android {
-    namespace = "com.habitmood.habit_mood_journal"
+    namespace = "com.vkulakra.movo"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -22,21 +38,33 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.habitmood.habit_mood_journal"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.vkulakra.movo"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // ── Release signing ──────────────────────────────────────────────
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProps["storeFile"] ?: "")
+            storePassword = keystoreProps["storePassword"] ?: ""
+            keyAlias = keystoreProps["keyAlias"] ?: ""
+            keyPassword = keystoreProps["keyPassword"] ?: ""
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Enable R8 code shrinking, obfuscation, and optimization
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
